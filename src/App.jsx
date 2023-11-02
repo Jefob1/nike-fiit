@@ -1,9 +1,13 @@
 import "./App.css";
-
 import { useEffect, useState } from "react";
-import Card from "./components/Card/card";
+import { ThemeProvider } from '@mui/material/styles';
+import Cardd from "./components/Card/card";
 import Header from "./components/Header/header";
 import Cart from "./components/Cart/cart";
+import theme from './theme';
+import Airtable from 'airtable';
+
+const base = new Airtable({ apiKey: 'patiCf5az42cTEuMl.341399f2ae73c5e8369a6f60c8a633d0dbe9865c69d48ffe4805c80fff496a44'}).base('appTpBXUcE8MFYHAZ');
 
 function App() {
   const [lanches, setLanches] = useState([]);
@@ -30,44 +34,60 @@ function App() {
   }
 
   useEffect(() => {
-    fetch("https://hamburgueria-kenzie-json-serve.herokuapp.com/products")
-      .then((response) => response.json())
-      .then((response) => {
-        setLanches(response);
-        setLanchesFiltrados(response);
-      })
-      .catch((error) => console.log(error));
+    base('Clothing').select({
+      view: 'Closet Gallery',
+        fields: ['Product', 'Category', 'Price', 'Picture']
+    }).eachPage((records, fetchNextPage) => {
+      setLanches(records);
+      setLanchesFiltrados(records);
+      fetchNextPage();
+    },
+    (err) => {
+      if (err) {
+        console.error('Error fetching data:', err);
+      }
+    }
+    )
   }, []);
 
   return (
-    <div className="App">
-      <Header
-        lanches={lanches}
-        setLanchesFiltrados={setLanchesFiltrados}
-        setLanchePesquisado={setLanchePesquisado}
-        lanchePesquisado={lanchePesquisado}
-        setPesquisaAtivo={setPesquisaAtivo}
-      />
-
-      {/* {pesquisaAtivo && lanchePesquisado && (
-        <div className="resultadosPara">
-          <h2>
-            Resultados para: <span>{lanchePesquisado}</span>
-          </h2>
-
-          <button onClick={() => setValorInputParaVazio()}>
-            Limpar pesquisa
-          </button>
-        </div>
-      )} */}
-      <main>
-        {lanchePesquisado.length !== 0 ? (
-          <>
-            <h2 className="h2">
-              Resultado para:<p className="p">{lanchePesquisado}</p>
-            </h2>
+    <ThemeProvider theme={theme}>
+      <div className="App">
+        <Header
+          lanches={lanches}
+          setLanchesFiltrados={setLanchesFiltrados}
+          setLanchePesquisado={setLanchePesquisado}
+          lanchePesquisado={lanchePesquisado}
+          setPesquisaAtivo={setPesquisaAtivo}
+        />
+<br />
+        <main>
+          {lanchePesquisado.length !== 0 ? (
+            <>
+              <h2 className="h2">
+                Results for:<p className="p">{lanchePesquisado}</p>
+                <br />
+                <br />
+              </h2>
+              <div className=" containerGeral">
+                <Cardd
+                  adicionarAoCarrinho={adicionarAoCarrinho}
+                  LanchesFiltrados={LanchesFiltrados}
+                  lanches={lanches}
+                  pesquisaAtivo={pesquisaAtivo}
+                  lanchePesquisado={lanchePesquisado}
+                  setValorInputParaVazio={setValorInputParaVazio}
+                />
+                <Cart
+                  deletarItemCarrinho={deletarItemCarrinho}
+                  lanchesCarrinho={lanchesCarrinho}
+                  deletarTodositens={deletarTodositens}
+                />
+              </div>
+            </>
+          ) : (
             <div className=" containerGeral">
-              <Card
+              <Cardd
                 adicionarAoCarrinho={adicionarAoCarrinho}
                 LanchesFiltrados={LanchesFiltrados}
                 lanches={lanches}
@@ -81,26 +101,10 @@ function App() {
                 deletarTodositens={deletarTodositens}
               />
             </div>
-          </>
-        ) : (
-          <div className=" containerGeral">
-            <Card
-              adicionarAoCarrinho={adicionarAoCarrinho}
-              LanchesFiltrados={LanchesFiltrados}
-              lanches={lanches}
-              pesquisaAtivo={pesquisaAtivo}
-              lanchePesquisado={lanchePesquisado}
-              setValorInputParaVazio={setValorInputParaVazio}
-            />
-            <Cart
-              deletarItemCarrinho={deletarItemCarrinho}
-              lanchesCarrinho={lanchesCarrinho}
-              deletarTodositens={deletarTodositens}
-            />
-          </div>
-        )}
-      </main>
-    </div>
+          )}
+        </main>
+      </div>
+    </ThemeProvider>
   );
 }
 
